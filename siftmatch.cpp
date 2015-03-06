@@ -23,19 +23,19 @@ extern "C"
 //目标点与最近邻和次近邻的距离的比值的阈值，若大于此阈值，则剔除此匹配点对
 //通常此值取0.6，值越小找到的匹配点对越精确，但匹配数目越少
 /* threshold on squared ratio of distances between NN and 2nd NN */
-#define NN_SQ_DIST_RATIO_THR 0.49
+#define NN_SQ_DIST_RATIO_THR 0.6
 
 //窗口名字符串
-#define IMG1 "图1"
-#define IMG2 "图2"
-#define IMG1_FEAT "图1特征点"
-#define IMG2_FEAT "图2特征点"
-#define IMG_MATCH1 "距离比值筛选后的匹配结果"
-#define IMG_MATCH2 "RANSAC筛选后的匹配结果"
-#define IMG_MOSAIC_TEMP "临时拼接图像"
-#define IMG_MOSAIC_SIMPLE "简易拼接图"
-#define IMG_MOSAIC_BEFORE_FUSION "重叠区域融合前"
-#define IMG_MOSAIC_PROC "处理后的拼接图"
+#define IMG1 "pic1"
+#define IMG2 "pic2"
+#define IMG1_FEAT "pic1 feature"
+#define IMG2_FEAT "pic2 feature"
+#define IMG_MATCH1 "distance match"
+#define IMG_MATCH2 "RANSAC match"
+#define IMG_MOSAIC_TEMP "MOSAIC_TEMP"
+#define IMG_MOSAIC_SIMPLE "MOSAIC_SIMPLE"
+#define IMG_MOSAIC_BEFORE_FUSION "MOSAIC_BEFORE_FUSION"
+#define IMG_MOSAIC_PROC "MOSAIC_PROC"
 
 
 SiftMatch::SiftMatch(QWidget *parent) :
@@ -305,7 +305,7 @@ void SiftMatch::on_matchButton_clicked()
     }
     else //无法计算出变换矩阵，即两幅图中没有重合区域
     {
-        QMessageBox::warning(this,tr("警告"),tr("两图中无公共区域"));
+        QMessageBox::warning(this,"warning","no common area");
     }
 
     ui->radioButton_horizontal->setEnabled(false);//禁用排列方向选择按钮
@@ -425,6 +425,7 @@ void SiftMatch::on_mosaicButton_clicked()
 
         //*重叠区域取两幅图像的平均值，效果不好
         //设置ROI，是包含重叠区域的矩形
+        /*
         cvSetImageROI(xformed_proc,cvRect(MIN(leftTop.x,leftBottom.x),0,img1->width-MIN(leftTop.x,leftBottom.x),xformed_proc->height));
         cvSetImageROI(img1,cvRect(MIN(leftTop.x,leftBottom.x),0,img1->width-MIN(leftTop.x,leftBottom.x),xformed_proc->height));
         cvSetImageROI(xformed,cvRect(MIN(leftTop.x,leftBottom.x),0,img1->width-MIN(leftTop.x,leftBottom.x),xformed_proc->height));
@@ -519,7 +520,7 @@ void SiftMatch::on_restartButton_clicked()
     verticalStackFlag = false;//显示匹配结果的合成图片的排列方向标识复位
 
     ui->openButton->setEnabled(true);//激活打开按钮
-    ui->openButton->setText(tr("打开第一张图片"));
+    ui->openButton->setText("first pic");
 
     //禁用下列按钮
     ui->detectButton->setEnabled(false);
