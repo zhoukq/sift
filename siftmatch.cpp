@@ -23,7 +23,7 @@ extern "C"
 //目标点与最近邻和次近邻的距离的比值的阈值，若大于此阈值，则剔除此匹配点对
 //通常此值取0.6，值越小找到的匹配点对越精确，但匹配数目越少
 /* threshold on squared ratio of distances between NN and 2nd NN */
-#define NN_SQ_DIST_RATIO_THR 0.6
+#define NN_SQ_DIST_RATIO_THR 0.49
 
 //窗口名字符串
 #define IMG0 "pic0"
@@ -108,8 +108,9 @@ void SiftMatch::on_openButton_clicked()
                 name[0] = img_name;//保存第1张图片的文件名
                 //qDebug()<<name1.insert( name1.lastIndexOf(".",-1) , "_Feat");
                 img[0] = cvLoadImage( img_name.toAscii().data() );//打开图1，强制读取为三通道图像
-                cvNamedWindow(IMG0);//创建窗口
-                cvShowImage(IMG0,img[0]);//显示原图1
+                //qDebug()<<img[0]->width<<" "<<img[0]->height<<endl;
+                //cvNamedWindow(IMG0);//创建窗口
+                //cvShowImage(IMG0,img[0]);//显示原图1
             }
             //打开第2张图片
             else if( 2 == open_image_number )
@@ -120,8 +121,8 @@ void SiftMatch::on_openButton_clicked()
 
                 name[1] = img_name;//保存第2张图片的文件名
                 img[1] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
-                cvNamedWindow(IMG1);//创建窗口
-                cvShowImage(IMG1,img[1]);//显示原图2
+                //cvNamedWindow(IMG1);//创建窗口
+                //cvShowImage(IMG1,img[1]);//显示原图2
             }
             else if( 3 == open_image_number )
             {
@@ -131,8 +132,8 @@ void SiftMatch::on_openButton_clicked()
 
                 name[2] = img_name;//保存第2张图片的文件名
                 img[2] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
-                cvNamedWindow(IMG2);//创建窗口
-                cvShowImage(IMG2,img[2]);//显示原图2
+                //cvNamedWindow(IMG2);//创建窗口
+                //cvShowImage(IMG2,img[2]);//显示原图2
             }
             else if( 4 == open_image_number )
             {
@@ -142,8 +143,8 @@ void SiftMatch::on_openButton_clicked()
 
                 name[3] = img_name;//保存第2张图片的文件名
                 img[3] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
-                cvNamedWindow(IMG3);//创建窗口
-                cvShowImage(IMG3,img[3]);//显示原图2
+                //cvNamedWindow(IMG3);//创建窗口
+                //cvShowImage(IMG3,img[3]);//显示原图2
             }
         }
     }
@@ -162,8 +163,8 @@ void SiftMatch::on_detectButton_clicked()
         n[i] = sift_features( img[i], &feat[i] );//检测图1中的SIFT特征点,n1是图1的特征点个数
         //export_features("feature1.txt",feat1,n1);//将特征向量数据写入到文件
         draw_features( img_Feat[i], feat[i], n[i] );//画出特征点
-        cvNamedWindow(QString::number(i,10).toLatin1().data());//创建窗口
-        cvShowImage(QString::number(i,10).toLatin1().data(),img_Feat[i]);//显示
+        //cvNamedWindow(QString::number(i,10).toLatin1().data());//创建窗口
+        //cvShowImage(QString::number(i,10).toLatin1().data(),img_Feat[i]);//显示
         QString name1_Feat = name[0];//文件名，原文件名加"_Feat"
         cvSaveImage(name1_Feat.insert( name1_Feat.lastIndexOf(".",-1) , "_Feat").toAscii().data(),img_Feat[i]);//保存图片
     }
@@ -243,12 +244,12 @@ void SiftMatch::on_matchButton_clicked()
 
 
     //显示并保存经距离比值法筛选后的匹配图
-    cvNamedWindow(IMG_MATCH1);//创建窗口
-    cvShowImage(IMG_MATCH1,stacked[0]);//显示
-    cvNamedWindow(IMG_MATCH2);//创建窗口
-    cvShowImage(IMG_MATCH2,stacked[1]);//显示
-    cvNamedWindow(IMG_MATCH3);//创建窗口
-    cvShowImage(IMG_MATCH3,stacked[2]);//显示
+    //cvNamedWindow(IMG_MATCH1);//创建窗口
+    //cvShowImage(IMG_MATCH1,stacked[0]);//显示
+    //cvNamedWindow(IMG_MATCH2);//创建窗口
+    //cvShowImage(IMG_MATCH2,stacked[1]);//显示
+    //cvNamedWindow(IMG_MATCH3);//创建窗口
+    //cvShowImage(IMG_MATCH3,stacked[2]);//显示
     //保存匹配图
     QString name_match_DistRatio = name[0];//文件名，原文件名去掉序号后加"_match_DistRatio"
     cvSaveImage(name_match_DistRatio.replace( name_match_DistRatio.lastIndexOf(".",-1)-1 , 1 , "_match_DistRatio").toAscii().data(),stacked[0]);
@@ -371,65 +372,126 @@ void SiftMatch::on_matchButton_clicked()
 //计算图2的四个角经矩阵H变换后的坐标
 void SiftMatch::CalcFourCorner()
 {
-    /*
-    //计算图2的四个角经矩阵H变换后的坐标
     double v2[]={0,0,1};//左上角
     double v1[3];//变换后的坐标值
-    CvMat V2 = cvMat(3,1,CV_64FC1,v2);
-    CvMat V1 = cvMat(3,1,CV_64FC1,v1);
-    cvGEMM(H,&V2,1,0,1,&V1);//矩阵乘法
-    leftTop.x = cvRound(v1[0]/v1[2]);
-    leftTop.y = cvRound(v1[1]/v1[2]);
-    //cvCircle(xformed,leftTop,7,CV_RGB(255,0,0),2);
 
-    //将v2中数据设为左下角坐标
-    v2[0] = 0;
-    v2[1] = img[1]->height;
-    V2 = cvMat(3,1,CV_64FC1,v2);
-    V1 = cvMat(3,1,CV_64FC1,v1);
-    cvGEMM(H,&V2,1,0,1,&V1);
-    leftBottom.x = cvRound(v1[0]/v1[2]);
-    leftBottom.y = cvRound(v1[1]/v1[2]);
-    //cvCircle(xformed,leftBottom,7,CV_RGB(255,0,0),2);
+    for(int i=0;i<3;i++)
+    {
+        //计算图2的四个角经矩阵H变换后的坐标
 
-    //将v2中数据设为右上角坐标
-    v2[0] = img2->width;
-    v2[1] = 0;
-    V2 = cvMat(3,1,CV_64FC1,v2);
-    V1 = cvMat(3,1,CV_64FC1,v1);
-    cvGEMM(H,&V2,1,0,1,&V1);
-    rightTop.x = cvRound(v1[0]/v1[2]);
-    rightTop.y = cvRound(v1[1]/v1[2]);
-    //cvCircle(xformed,rightTop,7,CV_RGB(255,0,0),2);
+        CvMat V2 = cvMat(3,1,CV_64FC1,v2);
+        CvMat V1 = cvMat(3,1,CV_64FC1,v1);
+        for(int j=i;j>=0;j--)
+        {
+            cvGEMM(H[j],&V2,1,0,1,&V1);//矩阵乘法
+            v2[0]=cvRound(v1[0]/v1[2]);
+            v2[1]=cvRound(v1[1]/v1[2]);
+            v2[2]=1;
+            V2=cvMat(3,1,CV_64FC1,v2);
+        }
+        leftTop[i].x = cvRound(v1[0]/v1[2]);
+        leftTop[i].y = cvRound(v1[1]/v1[2]);
+        //cvCircle(xformed,leftTop,7,CV_RGB(255,0,0),2);
 
-    //将v2中数据设为右下角坐标
-    v2[0] = img2->width;
-    v2[1] = img2->height;
-    V2 = cvMat(3,1,CV_64FC1,v2);
-    V1 = cvMat(3,1,CV_64FC1,v1);
-    cvGEMM(H,&V2,1,0,1,&V1);
-    rightBottom.x = cvRound(v1[0]/v1[2]);
-    rightBottom.y = cvRound(v1[1]/v1[2]);
-    //cvCircle(xformed,rightBottom,7,CV_RGB(255,0,0),2);
-    */
+        //将v2中数据设为左下角坐标
+        v2[0] = 0;
+        v2[1] = img[i+1]->height;
+        V2 = cvMat(3,1,CV_64FC1,v2);
+        V1 = cvMat(3,1,CV_64FC1,v1);
+        for(int j=i;j>=0;j--)
+        {
+            cvGEMM(H[j],&V2,1,0,1,&V1);//矩阵乘法
+            v2[0]=cvRound(v1[0]/v1[2]);
+            v2[1]=cvRound(v1[1]/v1[2]);
+            v2[2]=1;
+            V2=cvMat(3,1,CV_64FC1,v2);
+        }
+        leftBottom[i].x = cvRound(v1[0]/v1[2]);
+        leftBottom[i].y = cvRound(v1[1]/v1[2]);
+        //cvCircle(xformed,leftBottom,7,CV_RGB(255,0,0),2);
+
+        //将v2中数据设为右上角坐标
+        v2[0] = img[i+1]->width;
+        v2[1] = 0;
+        V2 = cvMat(3,1,CV_64FC1,v2);
+        V1 = cvMat(3,1,CV_64FC1,v1);
+        for(int j=i;j>=0;j--)
+        {
+            cvGEMM(H[j],&V2,1,0,1,&V1);//矩阵乘法
+            v2[0]=cvRound(v1[0]/v1[2]);
+            v2[1]=cvRound(v1[1]/v1[2]);
+            v2[2]=1;
+            V2=cvMat(3,1,CV_64FC1,v2);
+        }
+        rightTop[i].x = cvRound(v1[0]/v1[2]);
+        rightTop[i].y = cvRound(v1[1]/v1[2]);
+        //cvCircle(xformed,rightTop,7,CV_RGB(255,0,0),2);
+
+        //将v2中数据设为右下角坐标
+        v2[0] = img[i+1]->width;
+        v2[1] = img[i+1]->height;
+        V2 = cvMat(3,1,CV_64FC1,v2);
+        V1 = cvMat(3,1,CV_64FC1,v1);
+        for(int j=i;j>=0;j--)
+        {
+            cvGEMM(H[j],&V2,1,0,1,&V1);//矩阵乘法
+            v2[0]=cvRound(v1[0]/v1[2]);
+            v2[1]=cvRound(v1[1]/v1[2]);
+            v2[2]=1;
+            V2=cvMat(3,1,CV_64FC1,v2);
+        }
+        rightBottom[i].x = cvRound(v1[0]/v1[2]);
+        rightBottom[i].y = cvRound(v1[1]/v1[2]);
+        //cvCircle(xformed,rightBottom,7,CV_RGB(255,0,0),2);
+        qDebug()<<rightBottom[i].x<<" "<<rightBottom[i].y<<endl;
+        qDebug()<<rightTop[i].x<<" "<<rightTop[i].y<<endl;
+    }
+
+
 }
 
 //全景拼接
 void SiftMatch::on_mosaicButton_clicked()
 {
-    /*
+
     //若能成功计算出变换矩阵，即两幅图中有共同区域，才可以进行全景拼接
     if(H)
     {
         //拼接图像，img[0]是左图，img2是右图
         CalcFourCorner();//计算图2的四个角经变换后的坐标
-        //为拼接结果图xformed分配空间,高度为图1图2高度的较小者，根据图2右上角和右下角变换后的点的位置决定拼接图的宽度
-        xformed = cvCreateImage(cvSize(MIN(rightTop.x,rightBottom.x),MIN(img[0]->height,img[1]->height)),IPL_DEPTH_8U,3);
-        //用变换矩阵H对右图img2做投影变换(变换后会有坐标右移)，结果放到xformed中
-        cvWarpPerspective(img2,xformed,H,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
-        cvNamedWindow(IMG_MOSAIC_TEMP); //显示临时图,即只将图2变换后的图
-        cvShowImage(IMG_MOSAIC_TEMP,xformed);
+        cvGEMM(H[0],H[1],1,0,1,H[1]);
+        cvGEMM(H[1],H[2],1,0,1,H[2]);
 
+        //为拼接结果图xformed分配空间,高度为图1图2高度的较小者，根据图2右上角和右下角变换后的点的位置决定拼接图的宽度
+        xformed = cvCreateImage(cvSize(MIN(rightTop[2].x,rightBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)),IPL_DEPTH_8U,3);
+        IplImage *xformed1=cvCloneImage(xformed),*xformed2=cvCloneImage(xformed);
+        //用变换矩阵H对右图img2做投影变换(变换后会有坐标右移)，结果放到xformed中
+        cvWarpPerspective(img[1],xformed,H[0],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(img[2],xformed1,H[1],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(img[3],xformed2,H[2],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+
+        cvSetImageROI(xformed1,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
+        cvSetImageROI(xformed,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
+        cvAddWeighted(xformed1,1,xformed,0,0,xformed);
+        cvResetImageROI(xformed);
+        cvResetImageROI(xformed1);
+
+        cvSetImageROI(xformed2,cvRect(MIN(leftTop[2].x,leftBottom[2].x),0,MIN(rightTop[2].x,rightBottom[2].x)-MIN(leftTop[2].x,leftBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
+        cvSetImageROI(xformed,cvRect(MIN(leftTop[2].x,leftBottom[2].x),0,MIN(rightTop[2].x,rightBottom[2].x)-MIN(leftTop[2].x,leftBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
+        cvAddWeighted(xformed2,1,xformed,0,0,xformed);
+        cvResetImageROI(xformed);
+        cvResetImageROI(xformed2);
+
+        cvSetImageROI(xformed,cvRect(0,0,img[0]->width,img[0]->height));
+        cvAddWeighted(img[0],1,xformed,0,0,xformed);
+        cvResetImageROI(xformed);
+
+        cvNamedWindow(IMG_MOSAIC_SIMPLE,CV_WINDOW_NORMAL);//创建窗口
+        cvShowImage(IMG_MOSAIC_SIMPLE,xformed);//显示简易拼接图
+
+
+
+        /*
         //简易拼接法：直接将将左图img[0]叠加到xformed的左边
         xformed_simple = cvCloneImage(xformed);//简易拼接图，可笼子xformed
         cvSetImageROI(xformed_simple,cvRect(0,0,img[0]->width,img[0]->height));
@@ -480,7 +542,7 @@ void SiftMatch::on_mosaicButton_clicked()
         cvNamedWindow(IMG_MOSAIC_PROC);//创建窗口
         cvShowImage(IMG_MOSAIC_PROC,xformed_proc);//显示处理后的拼接图
 
-        //*重叠区域取两幅图像的平均值，效果不好
+        //重叠区域取两幅图像的平均值，效果不好
         //设置ROI，是包含重叠区域的矩形
         /*
         cvSetImageROI(xformed_proc,cvRect(MIN(leftTop.x,leftBottom.x),0,img[0]->width-MIN(leftTop.x,leftBottom.x),xformed_proc->height));
@@ -511,8 +573,9 @@ void SiftMatch::on_mosaicButton_clicked()
         cvSaveImage(name_xformed.replace( name_xformed.lastIndexOf(".",-1)-1 , 1 , "_Mosaic").toAscii().data() , xformed_simple);//保存简易拼接图
         cvSaveImage(name_xformed.insert( name_xformed.lastIndexOf(".",-1) , "_Proc").toAscii().data() , xformed_proc);//保存处理后的拼接图
         ui->mosaicButton->setEnabled(false);//禁用全景拼接按钮
+        */
     }
-    */
+
 }
 
 // 重新选择

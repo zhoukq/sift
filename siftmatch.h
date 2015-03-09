@@ -68,7 +68,7 @@ private:
 //    int img2RightBound;//图2中匹配点外接矩形的右边界
 
     //图2的四个角经矩阵H变换后的坐标
-    CvPoint leftTop,leftBottom,rightTop,rightBottom;
+    CvPoint leftTop[3],leftBottom[3],rightTop[3],rightBottom[3];
 
 
 };
