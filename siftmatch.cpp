@@ -18,12 +18,12 @@ extern "C"
 
 //在k-d树上进行BBF搜索的最大次数
 /* the maximum number of keypoint NN candidates to check during BBF search */
-#define KDTREE_BBF_MAX_NN_CHKS 200
+#define KDTREE_BBF_MAX_NN_CHKS 500
 
 //目标点与最近邻和次近邻的距离的比值的阈值，若大于此阈值，则剔除此匹配点对
 //通常此值取0.6，值越小找到的匹配点对越精确，但匹配数目越少
 /* threshold on squared ratio of distances between NN and 2nd NN */
-#define NN_SQ_DIST_RATIO_THR 0.49
+#define NN_SQ_DIST_RATIO_THR 0.6
 
 //窗口名字符串
 #define IMG0 "pic0"
@@ -90,64 +90,76 @@ SiftMatch::~SiftMatch()
 //打开图片
 void SiftMatch::on_openButton_clicked()
 {
+    name[0]="pic1.bmp";
+    name[1]="pic2.bmp";
+    name[2]="pic3.bmp";
+    name[3]="pic4.bmp";
+
+    img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308.bmp");
+    img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313.bmp");
+    img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316.bmp");
+    img[3]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155318.bmp");
+    ui->openButton->setText("stop");//改变按钮文本
+    ui->openButton->setEnabled(false);
+    ui->detectButton->setEnabled(true);//激活特征检测按钮
     //只能打开2张图片
-    if(open_image_number <= 3 )
-    {
-        //注意：文件目录中不能有中文，两张图片的文件名最好为：xxx1.jpg,xxx2.jpg
-        //一般情况下xxx1.jpg应是左图，xxx2.jpg应是右图，但如果反了，程序可自动适应
-        QString img_name = QFileDialog::getOpenFileName(this,"Open Image", QDir::currentPath(),tr("Image Files(*.png *.jpeg *.jpg *.bmp *.gif)"));
-        if(!img_name.isNull())
-        {
-            open_image_number++;
-            //打开第1张图片
-            if( 1 == open_image_number )
-            {
-                ui->openButton->setText("second pic");//改变按钮文本
-                ui->restartButton->setEnabled(true);//激活重选按钮
+//    if(open_image_number <= 3 )
+//    {
+//        //注意：文件目录中不能有中文，两张图片的文件名最好为：xxx1.jpg,xxx2.jpg
+//        //一般情况下xxx1.jpg应是左图，xxx2.jpg应是右图，但如果反了，程序可自动适应
+//        QString img_name = QFileDialog::getOpenFileName(this,"Open Image", QDir::currentPath(),tr("Image Files(*.png *.jpeg *.jpg *.bmp *.gif)"));
+//        if(!img_name.isNull())
+//        {
+//            open_image_number++;
+//            //打开第1张图片
+//            if( 1 == open_image_number )
+//            {
+//                ui->openButton->setText("second pic");//改变按钮文本
+//                ui->restartButton->setEnabled(true);//激活重选按钮
 
-                name[0] = img_name;//保存第1张图片的文件名
-                //qDebug()<<name1.insert( name1.lastIndexOf(".",-1) , "_Feat");
-                img[0] = cvLoadImage( img_name.toAscii().data() );//打开图1，强制读取为三通道图像
-                //qDebug()<<img[0]->width<<" "<<img[0]->height<<endl;
-                //cvNamedWindow(IMG0);//创建窗口
-                //cvShowImage(IMG0,img[0]);//显示原图1
-            }
-            //打开第2张图片
-            else if( 2 == open_image_number )
-            {
-                ui->openButton->setText("third pic");//改变按钮文本
-                ui->openButton->setEnabled(true);
-                //ui->detectButton->setEnabled(true);//激活特征检测按钮
+//                name[0] = img_name;//保存第1张图片的文件名
+//                //qDebug()<<name1.insert( name1.lastIndexOf(".",-1) , "_Feat");
+//                img[0] = cvLoadImage( img_name.toAscii().data() );//打开图1，强制读取为三通道图像
+//                qDebug()<<img_name.toAscii().data()<<endl;
+//                //cvNamedWindow(IMG0);//创建窗口
+//                //cvShowImage(IMG0,img[0]);//显示原图1
+//            }
+//            //打开第2张图片
+//            else if( 2 == open_image_number )
+//            {
+//                ui->openButton->setText("third pic");//改变按钮文本
+//                ui->openButton->setEnabled(true);
+//                //ui->detectButton->setEnabled(true);//激活特征检测按钮
 
-                name[1] = img_name;//保存第2张图片的文件名
-                img[1] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
-                //cvNamedWindow(IMG1);//创建窗口
-                //cvShowImage(IMG1,img[1]);//显示原图2
-            }
-            else if( 3 == open_image_number )
-            {
-                ui->openButton->setText("forth pic");//改变按钮文本
-                ui->openButton->setEnabled(true);
-                //ui->detectButton->setEnabled(true);//激活特征检测按钮
+//                name[1] = img_name;//保存第2张图片的文件名
+//                img[1] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
+//                //cvNamedWindow(IMG1);//创建窗口
+//                //cvShowImage(IMG1,img[1]);//显示原图2
+//            }
+//            else if( 3 == open_image_number )
+//            {
+//                ui->openButton->setText("forth pic");//改变按钮文本
+//                ui->openButton->setEnabled(true);
+//                //ui->detectButton->setEnabled(true);//激活特征检测按钮
 
-                name[2] = img_name;//保存第2张图片的文件名
-                img[2] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
-                //cvNamedWindow(IMG2);//创建窗口
-                //cvShowImage(IMG2,img[2]);//显示原图2
-            }
-            else if( 4 == open_image_number )
-            {
-                ui->openButton->setText("stop");//改变按钮文本
-                ui->openButton->setEnabled(false);
-                ui->detectButton->setEnabled(true);//激活特征检测按钮
+//                name[2] = img_name;//保存第2张图片的文件名
+//                img[2] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
+//                //cvNamedWindow(IMG2);//创建窗口
+//                //cvShowImage(IMG2,img[2]);//显示原图2
+//            }
+//            else if( 4 == open_image_number )
+//            {
+//                ui->openButton->setText("stop");//改变按钮文本
+//                ui->openButton->setEnabled(false);
+//                ui->detectButton->setEnabled(true);//激活特征检测按钮
 
-                name[3] = img_name;//保存第2张图片的文件名
-                img[3] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
-                //cvNamedWindow(IMG3);//创建窗口
-                //cvShowImage(IMG3,img[3]);//显示原图2
-            }
-        }
-    }
+//                name[3] = img_name;//保存第2张图片的文件名
+//                img[3] = cvLoadImage( img_name.toAscii().data() );//打开图2，强制读取为三通道图像
+//                //cvNamedWindow(IMG3);//创建窗口
+//                //cvShowImage(IMG3,img[3]);//显示原图2
+//            }
+//        }
+//    }
 }
 
 //特征点检测
@@ -257,11 +269,20 @@ void SiftMatch::on_matchButton_clicked()
     cvSaveImage(name_match_DistRatio.replace( name_match_DistRatio.lastIndexOf(".",-1)-1 , 1 , "_match_DistRatio").toAscii().data(),stacked[2]);
 
 
+
     for(int j=0;j<3;j++)
     {
         //利用RANSAC算法筛选匹配点,计算变换矩阵H，
         //无论img[0]和img2的左右顺序，H永远是将feat2中的特征点变换为其匹配点，即将img2中的点变换为img[0]中的对应点
         H[j] = ransac_xform(feat[j+1],n[j+1],FEATURE_FWD_MATCH,lsq_homog,4,0.01,homog_xfer_err,3.0,&inliers,&n_inliers);
+
+        cvmSet(H[j],0,0,1);
+        cvmSet(H[j],0,1,0);
+        cvmSet(H[j],1,0,0);
+        cvmSet(H[j],1,1,1);
+        cvmSet(H[j],2,0,0);
+        cvmSet(H[j],2,1,0);
+
         //若能成功计算出变换矩阵，即两幅图中有共同区域
         if( H[j] )
         {
@@ -459,8 +480,8 @@ void SiftMatch::on_mosaicButton_clicked()
     {
         //拼接图像，img[0]是左图，img2是右图
         CalcFourCorner();//计算图2的四个角经变换后的坐标
-        cvGEMM(H[0],H[1],1,0,1,H[1]);
-        cvGEMM(H[1],H[2],1,0,1,H[2]);
+        cvGEMM(H[1],H[0],1,0,1,H[1]);
+        cvGEMM(H[2],H[1],1,0,1,H[2]);
 
         //为拼接结果图xformed分配空间,高度为图1图2高度的较小者，根据图2右上角和右下角变换后的点的位置决定拼接图的宽度
         xformed = cvCreateImage(cvSize(MIN(rightTop[2].x,rightBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)),IPL_DEPTH_8U,3);
@@ -469,6 +490,13 @@ void SiftMatch::on_mosaicButton_clicked()
         cvWarpPerspective(img[1],xformed,H[0],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
         cvWarpPerspective(img[2],xformed1,H[1],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
         cvWarpPerspective(img[3],xformed2,H[2],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+
+        cvNamedWindow("IMG_MOSAIC_SIMPLE1");//创建窗口
+        cvShowImage("IMG_MOSAIC_SIMPLE1",xformed);//显示简易拼接图
+        cvNamedWindow("IMG_MOSAIC_SIMPLE2");//创建窗口
+        cvShowImage("IMG_MOSAIC_SIMPLE2",xformed1);//显示简易拼接图
+        cvNamedWindow("IMG_MOSAIC_SIMPLE3");//创建窗口
+        cvShowImage("IMG_MOSAIC_SIMPLE3",xformed2);//显示简易拼接图
 
         cvSetImageROI(xformed1,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
         cvSetImageROI(xformed,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
