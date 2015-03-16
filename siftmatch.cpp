@@ -100,6 +100,11 @@ void SiftMatch::on_openButton_clicked()
     name[2]="pic3.bmp";
     name[3]="pic4.bmp";
 
+//    img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308_ShiftN.jpg");
+//    img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313_ShiftN.jpg");
+//    img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316_ShiftN.jpg");
+//    img[3]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155318_ShiftN.jpg");
+
     img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308.bmp");
     img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313.bmp");
     img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316.bmp");
@@ -263,12 +268,12 @@ void SiftMatch::on_matchButton_clicked()
 
 
     //显示并保存经距离比值法筛选后的匹配图
-    //cvNamedWindow(IMG_MATCH1);//创建窗口
-    //cvShowImage(IMG_MATCH1,stacked[0]);//显示
-    //cvNamedWindow(IMG_MATCH2);//创建窗口
-    //cvShowImage(IMG_MATCH2,stacked[1]);//显示
-    //cvNamedWindow(IMG_MATCH3);//创建窗口
-    //cvShowImage(IMG_MATCH3,stacked[2]);//显示
+//    cvNamedWindow(IMG_MATCH1);//创建窗口
+//    cvShowImage(IMG_MATCH1,stacked[0]);//显示
+//    cvNamedWindow(IMG_MATCH2);//创建窗口
+//    cvShowImage(IMG_MATCH2,stacked[1]);//显示
+//    cvNamedWindow(IMG_MATCH3);//创建窗口
+//    cvShowImage(IMG_MATCH3,stacked[2]);//显示
     //保存匹配图
     QString name_match_DistRatio = name[0];//文件名，原文件名去掉序号后加"_match_DistRatio"
     cvSaveImage(name_match_DistRatio.replace( name_match_DistRatio.lastIndexOf(".",-1)-1 , 1 , "_match_DistRatio").toAscii().data(),stacked[0]);
@@ -341,11 +346,11 @@ void SiftMatch::on_matchButton_clicked()
             //绘制图2中包围匹配点的矩形
             //cvRectangle(stacked_ransac,cvPoint(img[0]->width+img2LeftBound,0),cvPoint(img[0]->width+img2RightBound,img2->height),CV_RGB(0,0,255),2);
 
-            //cvNamedWindow(QString::number(j*10,10).toLatin1().data());//创建窗口
-            //cvShowImage(QString::number(j*10,10).toLatin1().data(),stacked_ransac[j]);//显示经RANSAC算法筛选后的匹配图
+            cvNamedWindow(QString::number(j*10,10).toLatin1().data());//创建窗口
+            cvShowImage(QString::number(j*10,10).toLatin1().data(),stacked_ransac[j]);//显示经RANSAC算法筛选后的匹配图
             //保存匹配图
-            QString name_match_RANSAC = name[0];//文件名，原文件名去掉序号后加"_match_RANSAC"
-            cvSaveImage(name_match_RANSAC.replace( name_match_RANSAC.lastIndexOf(".",-1)-1 , 1 , "_match_RANSAC").toAscii().data(),stacked_ransac[j]);
+//            QString name_match_RANSAC = name[0];//文件名，原文件名去掉序号后加"_match_RANSAC"
+//            cvSaveImage(name_match_RANSAC.replace( name_match_RANSAC.lastIndexOf(".",-1)-1 , 1 , "_match_RANSAC").toAscii().data(),stacked_ransac[j]);
 
 
             /*程序中计算出的变换矩阵H用来将img2中的点变换为img[0]中的点，正常情况下img[0]应该是左图，img2应该是右图。
@@ -405,7 +410,12 @@ void SiftMatch::CalcFourCorner()
 
     for(int i=0;i<3;i++)
     {
-        //计算图2的四个角经矩阵H变换后的坐标
+        //计算图2的四个角经矩阵H变换后的坐标//        cvmSet(H[j],0,0,1);
+        //        cvmSet(H[j],0,1,0);
+        //        cvmSet(H[j],1,0,0);
+        //        cvmSet(H[j],1,1,1);
+        //        cvmSet(H[j],2,0,0);
+        //        cvmSet(H[j],2,1,0);
 
         CvMat V2 = cvMat(3,1,CV_64FC1,v2);
         CvMat V1 = cvMat(3,1,CV_64FC1,v1);
@@ -466,7 +476,12 @@ void SiftMatch::CalcFourCorner()
             v2[0]=cvRound(v1[0]/v1[2]);
             v2[1]=cvRound(v1[1]/v1[2]);
             v2[2]=1;
-            V2=cvMat(3,1,CV_64FC1,v2);
+            V2=cvMat(3,1,CV_64FC1,v2);//        cvmSet(H[j],0,0,1);
+            //        cvmSet(H[j],0,1,0);
+            //        cvmSet(H[j],1,0,0);
+            //        cvmSet(H[j],1,1,1);
+            //        cvmSet(H[j],2,0,0);
+            //        cvmSet(H[j],2,1,0);
         }
         rightBottom[i].x = cvRound(v1[0]/v1[2]);
         rightBottom[i].y = cvRound(v1[1]/v1[2]);
@@ -521,7 +536,8 @@ void SiftMatch::on_mosaicButton_clicked()
         cvResetImageROI(xformed);
         cvResetImageROI(xformed2);
 
-        cvSetImageROI(xformed,cvRect(0,0,img[0]->width,img[0]->height));
+        cvSetImageROI(xformed,cvRect(0,0,img[0]->width,xformed->height));
+        cvSetImageROI(img[0],cvRect(0,0,img[0]->width,xformed->height));
         cvAddWeighted(img[0],1,xformed,0,0,xformed);
         cvResetImageROI(xformed);
 
@@ -698,76 +714,170 @@ void SiftMatch::on_restartButton_clicked()
 
 void SiftMatch::on_k1addButton_clicked()
 {
-    a1=a1+0.05;
+    int seq=0;
+    if(ui->radioButton_pic0->isChecked())
+    {
+        seq=0;
+    }
+    else if(ui->radioButton_pic1->isChecked())
+    {
+        seq=1;
+    }
+    else if(ui->radioButton_pic2->isChecked())
+    {
+        seq=2;
+    }
+    else if(ui->radioButton_pic3->isChecked())
+    {
+        seq=3;
+    }
+
+    a1[seq]=a1[seq]+0.05;
     distort_process();
 }
 
 void SiftMatch::on_k2addButton_clicked()
 {
-    a2=a2+0.05;
+    int seq=0;
+    if(ui->radioButton_pic0->isChecked())
+    {
+        seq=0;
+    }
+    else if(ui->radioButton_pic1->isChecked())
+    {
+        seq=1;
+    }
+    else if(ui->radioButton_pic2->isChecked())
+    {
+        seq=2;
+    }
+    else if(ui->radioButton_pic3->isChecked())
+    {
+        seq=3;
+    }
+
+    a2[seq]=a2[seq]+0.05;
     distort_process();
 }
 
 void SiftMatch::on_k3addButton_clicked()
 {
-    a3=a3+0.05;
+    int seq=0;
+    if(ui->radioButton_pic0->isChecked())
+    {
+        seq=0;
+    }
+    else if(ui->radioButton_pic1->isChecked())
+    {
+        seq=1;
+    }
+    else if(ui->radioButton_pic2->isChecked())
+    {
+        seq=2;
+    }
+    else if(ui->radioButton_pic3->isChecked())
+    {
+        seq=3;
+    }
+
+    a3[seq]=a3[seq]+0.05;
     distort_process();
 }
 
 void SiftMatch::on_k1deButton_clicked()
 {
-    a1=a1-0.05;
+    int seq=0;
+    if(ui->radioButton_pic0->isChecked())
+    {
+        seq=0;
+    }
+    else if(ui->radioButton_pic1->isChecked())
+    {
+        seq=1;
+    }
+    else if(ui->radioButton_pic2->isChecked())
+    {
+        seq=2;
+    }
+    else if(ui->radioButton_pic3->isChecked())
+    {
+        seq=3;
+    }
+
+    a1[seq]=a1[seq]-0.05;
     distort_process();
 }
 
 void SiftMatch::on_k2deButton_clicked()
 {
-    a2=a2-0.05;
+    int seq=0;
+    if(ui->radioButton_pic0->isChecked())
+    {
+        seq=0;
+    }
+    else if(ui->radioButton_pic1->isChecked())
+    {
+        seq=1;
+    }
+    else if(ui->radioButton_pic2->isChecked())
+    {
+        seq=2;
+    }
+    else if(ui->radioButton_pic3->isChecked())
+    {
+        seq=3;
+    }
+
+    a2[seq]=a2[seq]-0.05;
     distort_process();
 }
 
 void SiftMatch::on_k3deButton_clicked()
 {
-    a3=a3-0.05;
+    int seq=0;
+    if(ui->radioButton_pic0->isChecked())
+    {
+        seq=0;
+    }
+    else if(ui->radioButton_pic1->isChecked())
+    {
+        seq=1;
+    }
+    else if(ui->radioButton_pic2->isChecked())
+    {
+        seq=2;
+    }
+    else if(ui->radioButton_pic3->isChecked())
+    {
+        seq=3;
+    }
+
+    a3[seq]=a3[seq]-0.05;
     distort_process();
 }
 
 void SiftMatch::distort_process()
 {
-    int seq=0;
-    IplImage *imgt=img[0];
-    if(ui->radioButton_pic0->isChecked())
-    {
-        imgt=img[0];
-        seq=0;
-    }
-    else if(ui->radioButton_pic1->isChecked())
-    {
-        imgt=img[1];
-        seq=1;
-    }
-    else if(ui->radioButton_pic2->isChecked())
-    {
-        imgt=img[2];
-        seq=2;
-    }
-    else if(ui->radioButton_pic3->isChecked())
-    {
-        imgt=img[3];
-        seq=3;
-    }
 
 
 
     CvMat *T0=cvCloneMat(H[0]),*T1=cvCloneMat(H[1]),*T2=cvCloneMat(H[2]);
     double B01data[] = {7.3278474649451425e+002, 0., 280., 0.,7.5630160640330973e+002, 209., 0., 0., 1.};
     Mat cameraMatrix = Mat(3,3,CV_64F,B01data).clone();
-    double B10data[] = {a1, a2, 0., 0.,a3,0,0,0};
-    Mat distCoeffs = Mat(8,1,CV_64F,B10data).clone();
-    Mat srcc(imgt),dstt=srcc.clone();
-    undistort(srcc, dstt, cameraMatrix, distCoeffs,cameraMatrix);
-    IplImage lucky_img(dstt);
-    IplImage *img0,*img1,*img2,*img3;
+    double B10data[] = {a1[0], a2[0], 0., 0.,a3[0],0,0,0};
+    double B12data[] = {a1[1], a2[1], 0., 0.,a3[1],0,0,0};
+    double B23data[] = {a1[2], a2[2], 0., 0.,a3[2],0,0,0};
+    double B34data[] = {a1[3], a2[3], 0., 0.,a3[3],0,0,0};
+    Mat distCoeffs0 = Mat(8,1,CV_64F,B10data).clone(),distCoeffs1 = Mat(8,1,CV_64F,B12data).clone(),distCoeffs2 = Mat(8,1,CV_64F,B23data).clone(),distCoeffs3 = Mat(8,1,CV_64F,B34data).clone();
+    Mat srcc0(img[0]),dstt0=srcc0.clone();
+    undistort(srcc0, dstt0, cameraMatrix, distCoeffs0,cameraMatrix);
+    Mat srcc1(img[1]),dstt1=srcc1.clone();
+    undistort(srcc1, dstt1, cameraMatrix, distCoeffs1,cameraMatrix);
+    Mat srcc2(img[2]),dstt2=srcc2.clone();
+    undistort(srcc2, dstt2, cameraMatrix, distCoeffs2,cameraMatrix);
+    Mat srcc3(img[3]),dstt3=srcc3.clone();
+    undistort(srcc3, dstt3, cameraMatrix, distCoeffs3,cameraMatrix);
+    IplImage img0(dstt0),img1(dstt1),img2(dstt2),img3(dstt3);
     cvDestroyAllWindows();
     if(H)
     {
@@ -780,38 +890,10 @@ void SiftMatch::distort_process()
         xformed = cvCreateImage(cvSize(MIN(rightTop[2].x,rightBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)),IPL_DEPTH_8U,3);
         IplImage *xformed1=cvCloneImage(xformed),*xformed2=cvCloneImage(xformed);
         //用变换矩阵H对右图img2做投影变换(变换后会有坐标右移)，结果放到xformed中
-        switch(seq)
-        {
-        case 0:
-            img0=&lucky_img;
-            img1=img[1];
-            img2=img[2];
-            img3=img[3];
-            break;
-        case 1:
-            img0=img[0];
-            img1=&lucky_img;
-            img2=img[2];
-            img3=img[3];
-            break;
-        case 2:
-            img0=img[0];
-            img1=img[1];
-            img2=&lucky_img;
-            img3=img[3];
-            break;
-        case 3:
-            img0=img[0];
-            img1=img[1];
-            img2=img[2];
-            img3=&lucky_img;
-            break;
 
-        }
-
-        cvWarpPerspective(img1,xformed,T0,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
-        cvWarpPerspective(img2,xformed1,T1,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
-        cvWarpPerspective(img3,xformed2,T2,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(&img1,xformed,T0,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(&img2,xformed1,T1,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(&img3,xformed2,T2,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
 
         cvSetImageROI(xformed1,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
         cvSetImageROI(xformed,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
@@ -825,13 +907,26 @@ void SiftMatch::distort_process()
         cvResetImageROI(xformed);
         cvResetImageROI(xformed2);
 
-        cvSetImageROI(xformed,cvRect(0,0,img[0]->width,img[0]->height));
-        cvAddWeighted(img0,1,xformed,0,0,xformed);
+        cvSetImageROI(xformed,cvRect(0,0,MIN(leftTop[0].x,leftBottom[0].x),xformed->height));
+        cvSetImageROI(&img0,cvRect(0,0,MIN(leftTop[0].x,leftBottom[0].x),xformed->height));
+        cvAddWeighted(&img0,1,xformed,0,0,xformed);
         cvResetImageROI(xformed);
 
-        cvNamedWindow(IMG_MOSAIC_SIMPLE);//创建窗口
-        cvMoveWindow(IMG_MOSAIC_SIMPLE,0,0);
-        cvShowImage(IMG_MOSAIC_SIMPLE,xformed);//显示简易拼接图
+//        cvSetImageROI(xformed,cvRect(0,0,img0.width,img0.height));
+//        cvSetImageROI(&img0,cvRect(0,0,img0.width,img0.height));
+//        cvAddWeighted(&img0,1,xformed,0,0,xformed);
+//        cvResetImageROI(xformed);
+//        cvResetImageROI(&img0);
+
+//        cvSetImageROI(xformed,cvRect(cvmGet(H[0],0,2),cvmGet(H[0],1,2)<0?0:cvmGet(H[0],1,2),img1.width,cvmGet(H[0],1,2)<0?img1.height+cvmGet(H[0],1,2)<0:img1.height-cvmGet(H[0],1,2)));
+//        cvSetImageROI(&img1,cvRect(0,cvmGet(H[0],1,2)<0?-cvmGet(H[0],1,2):0,img1.width,cvmGet(H[0],1,2)<0?img1.height+cvmGet(H[0],1,2):img1.height-cvmGet(H[0],1,2)));
+//        cvAddWeighted(&img1,1,xformed,0,0,xformed);
+//        cvResetImageROI(xformed);
+//        cvResetImageROI(&img1);
+
+        cvNamedWindow("IMG_MOSAIC_SIMPLE");//创建窗口
+        //cvMoveWindow("IMG_MOSAIC_SIMPLE",0,0);
+        cvShowImage("IMG_MOSAIC_SIMPLE",xformed);//显示简易拼接图
     }
 
 }
