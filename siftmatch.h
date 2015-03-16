@@ -36,6 +36,21 @@ private slots:
 
     void on_mosaicButton_clicked();
 
+
+    void on_k1addButton_clicked();
+
+    void on_k2addButton_clicked();
+
+    void on_k3addButton_clicked();
+
+    void on_k1deButton_clicked();
+
+    void on_k2deButton_clicked();
+
+    void on_k3deButton_clicked();
+
+    void distort_process();
+
 private:
     Ui::SiftMatch *ui;
 
@@ -61,6 +76,7 @@ private:
     IplImage *xformed;//临时拼接图，即只将图2变换后的图
     IplImage *xformed_simple;//简易拼接图
     IplImage *xformed_proc;//处理后的拼接图
+    double a1 = -0.74698780106517149, a2= 2.3387246230570700, a3=-4.4404083231844647;
 
 //    int img1LeftBound;//图1中匹配点外接矩形的左边界
 //    int img1RightBound;//图1中匹配点外接矩形的右边界

@@ -90,6 +90,11 @@ SiftMatch::~SiftMatch()
 //打开图片
 void SiftMatch::on_openButton_clicked()
 {
+//    double a1 = -0.74698780106517149, a2= 2.3387246230570700, a3=-4.4404083231844647;
+//    double B01data[] = {7.3278474649451425e+002, 0., 280., 0.,7.5630160640330973e+002, 209., 0., 0., 1.};
+//    Mat cameraMatrix = Mat(3,3,CV_64F,B01data).clone();
+//    double B10data[] = {a1, a2, 0., 0.,a3,0,0,0};
+//    Mat distCoeffs = Mat(8,1,CV_64F,B10data).clone();
     name[0]="pic1.bmp";
     name[1]="pic2.bmp";
     name[2]="pic3.bmp";
@@ -99,6 +104,8 @@ void SiftMatch::on_openButton_clicked()
     img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313.bmp");
     img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316.bmp");
     img[3]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155318.bmp");
+//    Mat srcc(img[0]),dstt=srcc.clone();
+//    undistort(srcc, dstt, cameraMatrix, distCoeffs,cameraMatrix);
     ui->openButton->setText("stop");//改变按钮文本
     ui->openButton->setEnabled(false);
     ui->detectButton->setEnabled(true);//激活特征检测按钮
@@ -334,8 +341,8 @@ void SiftMatch::on_matchButton_clicked()
             //绘制图2中包围匹配点的矩形
             //cvRectangle(stacked_ransac,cvPoint(img[0]->width+img2LeftBound,0),cvPoint(img[0]->width+img2RightBound,img2->height),CV_RGB(0,0,255),2);
 
-            cvNamedWindow(QString::number(j*10,10).toLatin1().data());//创建窗口
-            cvShowImage(QString::number(j*10,10).toLatin1().data(),stacked_ransac[j]);//显示经RANSAC算法筛选后的匹配图
+            //cvNamedWindow(QString::number(j*10,10).toLatin1().data());//创建窗口
+            //cvShowImage(QString::number(j*10,10).toLatin1().data(),stacked_ransac[j]);//显示经RANSAC算法筛选后的匹配图
             //保存匹配图
             QString name_match_RANSAC = name[0];//文件名，原文件名去掉序号后加"_match_RANSAC"
             cvSaveImage(name_match_RANSAC.replace( name_match_RANSAC.lastIndexOf(".",-1)-1 , 1 , "_match_RANSAC").toAscii().data(),stacked_ransac[j]);
@@ -464,8 +471,8 @@ void SiftMatch::CalcFourCorner()
         rightBottom[i].x = cvRound(v1[0]/v1[2]);
         rightBottom[i].y = cvRound(v1[1]/v1[2]);
         //cvCircle(xformed,rightBottom,7,CV_RGB(255,0,0),2);
-        qDebug()<<rightBottom[i].x<<" "<<rightBottom[i].y<<endl;
-        qDebug()<<rightTop[i].x<<" "<<rightTop[i].y<<endl;
+        //qDebug()<<rightBottom[i].x<<" "<<rightBottom[i].y<<endl;
+        //qDebug()<<rightTop[i].x<<" "<<rightTop[i].y<<endl;
     }
 
 
@@ -474,22 +481,22 @@ void SiftMatch::CalcFourCorner()
 //全景拼接
 void SiftMatch::on_mosaicButton_clicked()
 {
-
+    CvMat *T0=cvCloneMat(H[0]),*T1=cvCloneMat(H[1]),*T2=cvCloneMat(H[2]);
     //若能成功计算出变换矩阵，即两幅图中有共同区域，才可以进行全景拼接
     if(H)
     {
         //拼接图像，img[0]是左图，img2是右图
         CalcFourCorner();//计算图2的四个角经变换后的坐标
-        cvGEMM(H[1],H[0],1,0,1,H[1]);
-        cvGEMM(H[2],H[1],1,0,1,H[2]);
+        cvGEMM(T1,T0,1,0,1,T1);
+        cvGEMM(T2,T1,1,0,1,T2);
 
         //为拼接结果图xformed分配空间,高度为图1图2高度的较小者，根据图2右上角和右下角变换后的点的位置决定拼接图的宽度
         xformed = cvCreateImage(cvSize(MIN(rightTop[2].x,rightBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)),IPL_DEPTH_8U,3);
         IplImage *xformed1=cvCloneImage(xformed),*xformed2=cvCloneImage(xformed);
         //用变换矩阵H对右图img2做投影变换(变换后会有坐标右移)，结果放到xformed中
-        cvWarpPerspective(img[1],xformed,H[0],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
-        cvWarpPerspective(img[2],xformed1,H[1],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
-        cvWarpPerspective(img[3],xformed2,H[2],CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(img[1],xformed,T0,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(img[2],xformed1,T1,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(img[3],xformed2,T2,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
 
         cvNamedWindow("IMG_MOSAIC_SIMPLE1");//创建窗口
         cvShowImage("IMG_MOSAIC_SIMPLE1",xformed);//显示简易拼接图
@@ -497,6 +504,10 @@ void SiftMatch::on_mosaicButton_clicked()
         cvShowImage("IMG_MOSAIC_SIMPLE2",xformed1);//显示简易拼接图
         cvNamedWindow("IMG_MOSAIC_SIMPLE3");//创建窗口
         cvShowImage("IMG_MOSAIC_SIMPLE3",xformed2);//显示简易拼接图
+
+//        cvSaveImage("c1.bmp",xformed);
+//        cvSaveImage("c2.bmp",xformed1);
+//        cvSaveImage("c3.bmp",xformed2);
 
         cvSetImageROI(xformed1,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
         cvSetImageROI(xformed,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
@@ -518,6 +529,7 @@ void SiftMatch::on_mosaicButton_clicked()
         cvShowImage(IMG_MOSAIC_SIMPLE,xformed);//显示简易拼接图
 
 
+//        cvSaveImage("call.bmp",xformed);
 
         /*
         //简易拼接法：直接将将左图img[0]叠加到xformed的左边
@@ -682,3 +694,144 @@ void SiftMatch::on_restartButton_clicked()
     */
 }
 
+
+
+void SiftMatch::on_k1addButton_clicked()
+{
+    a1=a1+0.05;
+    distort_process();
+}
+
+void SiftMatch::on_k2addButton_clicked()
+{
+    a2=a2+0.05;
+    distort_process();
+}
+
+void SiftMatch::on_k3addButton_clicked()
+{
+    a3=a3+0.05;
+    distort_process();
+}
+
+void SiftMatch::on_k1deButton_clicked()
+{
+    a1=a1-0.05;
+    distort_process();
+}
+
+void SiftMatch::on_k2deButton_clicked()
+{
+    a2=a2-0.05;
+    distort_process();
+}
+
+void SiftMatch::on_k3deButton_clicked()
+{
+    a3=a3-0.05;
+    distort_process();
+}
+
+void SiftMatch::distort_process()
+{
+    int seq=0;
+    IplImage *imgt=img[0];
+    if(ui->radioButton_pic0->isChecked())
+    {
+        imgt=img[0];
+        seq=0;
+    }
+    else if(ui->radioButton_pic1->isChecked())
+    {
+        imgt=img[1];
+        seq=1;
+    }
+    else if(ui->radioButton_pic2->isChecked())
+    {
+        imgt=img[2];
+        seq=2;
+    }
+    else if(ui->radioButton_pic3->isChecked())
+    {
+        imgt=img[3];
+        seq=3;
+    }
+
+
+
+    CvMat *T0=cvCloneMat(H[0]),*T1=cvCloneMat(H[1]),*T2=cvCloneMat(H[2]);
+    double B01data[] = {7.3278474649451425e+002, 0., 280., 0.,7.5630160640330973e+002, 209., 0., 0., 1.};
+    Mat cameraMatrix = Mat(3,3,CV_64F,B01data).clone();
+    double B10data[] = {a1, a2, 0., 0.,a3,0,0,0};
+    Mat distCoeffs = Mat(8,1,CV_64F,B10data).clone();
+    Mat srcc(imgt),dstt=srcc.clone();
+    undistort(srcc, dstt, cameraMatrix, distCoeffs,cameraMatrix);
+    IplImage lucky_img(dstt);
+    IplImage *img0,*img1,*img2,*img3;
+    cvDestroyAllWindows();
+    if(H)
+    {
+        //拼接图像，img[0]是左图，img2是右图
+        CalcFourCorner();//计算图2的四个角经变换后的坐标
+        cvGEMM(T1,T0,1,0,1,T1);
+        cvGEMM(T2,T1,1,0,1,T2);
+
+        //为拼接结果图xformed分配空间,高度为图1图2高度的较小者，根据图2右上角和右下角变换后的点的位置决定拼接图的宽度
+        xformed = cvCreateImage(cvSize(MIN(rightTop[2].x,rightBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)),IPL_DEPTH_8U,3);
+        IplImage *xformed1=cvCloneImage(xformed),*xformed2=cvCloneImage(xformed);
+        //用变换矩阵H对右图img2做投影变换(变换后会有坐标右移)，结果放到xformed中
+        switch(seq)
+        {
+        case 0:
+            img0=&lucky_img;
+            img1=img[1];
+            img2=img[2];
+            img3=img[3];
+            break;
+        case 1:
+            img0=img[0];
+            img1=&lucky_img;
+            img2=img[2];
+            img3=img[3];
+            break;
+        case 2:
+            img0=img[0];
+            img1=img[1];
+            img2=&lucky_img;
+            img3=img[3];
+            break;
+        case 3:
+            img0=img[0];
+            img1=img[1];
+            img2=img[2];
+            img3=&lucky_img;
+            break;
+
+        }
+
+        cvWarpPerspective(img1,xformed,T0,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(img2,xformed1,T1,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+        cvWarpPerspective(img3,xformed2,T2,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
+
+        cvSetImageROI(xformed1,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
+        cvSetImageROI(xformed,cvRect(MIN(leftTop[1].x,leftBottom[1].x),0,MIN(rightTop[1].x,rightBottom[1].x)-MIN(leftTop[1].x,leftBottom[1].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
+        cvAddWeighted(xformed1,1,xformed,0,0,xformed);
+        cvResetImageROI(xformed);
+        cvResetImageROI(xformed1);
+
+        cvSetImageROI(xformed2,cvRect(MIN(leftTop[2].x,leftBottom[2].x),0,MIN(rightTop[2].x,rightBottom[2].x)-MIN(leftTop[2].x,leftBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
+        cvSetImageROI(xformed,cvRect(MIN(leftTop[2].x,leftBottom[2].x),0,MIN(rightTop[2].x,rightBottom[2].x)-MIN(leftTop[2].x,leftBottom[2].x),MIN(MIN(MIN(img[0]->height,img[1]->height),img[2]->height),img[3]->height)));
+        cvAddWeighted(xformed2,1,xformed,0,0,xformed);
+        cvResetImageROI(xformed);
+        cvResetImageROI(xformed2);
+
+        cvSetImageROI(xformed,cvRect(0,0,img[0]->width,img[0]->height));
+        cvAddWeighted(img0,1,xformed,0,0,xformed);
+        cvResetImageROI(xformed);
+
+        cvNamedWindow(IMG_MOSAIC_SIMPLE);//创建窗口
+        cvMoveWindow(IMG_MOSAIC_SIMPLE,0,0);
+        cvShowImage(IMG_MOSAIC_SIMPLE,xformed);//显示简易拼接图
+    }
+
+}

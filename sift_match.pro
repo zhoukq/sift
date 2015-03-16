@@ -11,6 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = sift_match
 TEMPLATE = app
 
+UI_DIR=./UI
 
 SOURCES += main.cpp\
         siftmatch.cpp \
