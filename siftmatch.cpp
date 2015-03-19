@@ -3,6 +3,8 @@
 
 #include <QtCore>
 #include <QtGui>
+#include <QFile>
+#include <QTextStream>
 
 //SIFT算法头文件
 //加extern "C"，告诉编译器按C语言的方式编译和连接
@@ -65,6 +67,30 @@ SiftMatch::SiftMatch(QWidget *parent) :
         H[i]=NULL;
     }
 
+    QFile ini_file("/home/zhou/sift_match/data.ini");
+
+    if(ini_file.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+        QTextStream txtInput(&ini_file);
+        QString pos;
+        int j=0;
+        while(!txtInput.atEnd())
+        {
+            for(int i=0;i<4;i++)
+            {
+                pos=txtInput.readLine().section("=",1);
+                //qDebug()<<pos<<endl;
+                a[j][i]=pos.toDouble();
+            }
+            j++;
+        }
+        ini_file.close();
+    }
+    else
+    {
+        qDebug()<<"read error"<<endl;
+    }
+
     xformed = NULL;
 
     verticalStackFlag = false;//显示匹配结果的合成图像默认是横向排列
@@ -99,7 +125,7 @@ void SiftMatch::on_openButton_clicked()
     name[1]="pic2.bmp";
     name[2]="pic3.bmp";
     name[3]="pic4.bmp";
-
+    write_file();
 //    img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308_ShiftN.jpg");
 //    img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313_ShiftN.jpg");
 //    img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316_ShiftN.jpg");
@@ -732,7 +758,7 @@ void SiftMatch::on_k1addButton_clicked()
         seq=3;
     }
 
-    a1[seq]=a1[seq]+0.05;
+    a[0][seq]=a[0][seq]+0.05;
     distort_process();
 }
 
@@ -756,7 +782,7 @@ void SiftMatch::on_k2addButton_clicked()
         seq=3;
     }
 
-    a2[seq]=a2[seq]+0.05;
+    a[1][seq]=a[1][seq]+0.05;
     distort_process();
 }
 
@@ -780,7 +806,7 @@ void SiftMatch::on_k3addButton_clicked()
         seq=3;
     }
 
-    a3[seq]=a3[seq]+0.05;
+    a[2][seq]=a[2][seq]+0.05;
     distort_process();
 }
 
@@ -804,7 +830,7 @@ void SiftMatch::on_k1deButton_clicked()
         seq=3;
     }
 
-    a1[seq]=a1[seq]-0.05;
+    a[0][seq]=a[0][seq]-0.05;
     distort_process();
 }
 
@@ -828,7 +854,7 @@ void SiftMatch::on_k2deButton_clicked()
         seq=3;
     }
 
-    a2[seq]=a2[seq]-0.05;
+    a[1][seq]=a[1][seq]-0.05;
     distort_process();
 }
 
@@ -852,7 +878,7 @@ void SiftMatch::on_k3deButton_clicked()
         seq=3;
     }
 
-    a3[seq]=a3[seq]-0.05;
+    a[2][seq]=a[2][seq]-0.05;
     distort_process();
 }
 
@@ -864,10 +890,10 @@ void SiftMatch::distort_process()
     CvMat *T0=cvCloneMat(H[0]),*T1=cvCloneMat(H[1]),*T2=cvCloneMat(H[2]);
     double B01data[] = {7.3278474649451425e+002, 0., 280., 0.,7.5630160640330973e+002, 209., 0., 0., 1.};
     Mat cameraMatrix = Mat(3,3,CV_64F,B01data).clone();
-    double B10data[] = {a1[0], a2[0], 0., 0.,a3[0],0,0,0};
-    double B12data[] = {a1[1], a2[1], 0., 0.,a3[1],0,0,0};
-    double B23data[] = {a1[2], a2[2], 0., 0.,a3[2],0,0,0};
-    double B34data[] = {a1[3], a2[3], 0., 0.,a3[3],0,0,0};
+    double B10data[] = {a[0][0], a[1][0], 0., 0.,a[2][0],0,0,0};
+    double B12data[] = {a[0][1], a[1][1], 0., 0.,a[2][1],0,0,0};
+    double B23data[] = {a[0][2], a[1][2], 0., 0.,a[2][2],0,0,0};
+    double B34data[] = {a[0][3], a[1][3], 0., 0.,a[2][3],0,0,0};
     Mat distCoeffs0 = Mat(8,1,CV_64F,B10data).clone(),distCoeffs1 = Mat(8,1,CV_64F,B12data).clone(),distCoeffs2 = Mat(8,1,CV_64F,B23data).clone(),distCoeffs3 = Mat(8,1,CV_64F,B34data).clone();
     Mat srcc0(img[0]),dstt0=srcc0.clone();
     undistort(srcc0, dstt0, cameraMatrix, distCoeffs0,cameraMatrix);
@@ -878,6 +904,7 @@ void SiftMatch::distort_process()
     Mat srcc3(img[3]),dstt3=srcc3.clone();
     undistort(srcc3, dstt3, cameraMatrix, distCoeffs3,cameraMatrix);
     IplImage img0(dstt0),img1(dstt1),img2(dstt2),img3(dstt3);
+    write_file();
     cvDestroyAllWindows();
     if(H)
     {
@@ -929,4 +956,26 @@ void SiftMatch::distort_process()
         cvShowImage("IMG_MOSAIC_SIMPLE",xformed);//显示简易拼接图
     }
 
+}
+
+void SiftMatch::write_file()
+{
+    QFile ini_file("/home/zhou/sift_match/data.ini");
+
+    if(ini_file.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+        QTextStream txtInput(&ini_file);
+        for(int j=0;j<3;j++)
+        {
+            for(int i=0;i<4;i++)
+            {
+                txtInput<<"a"<<j<<i<<"="<<a[j][i]<<endl;
+            }
+        }
+        ini_file.close();
+    }
+    else
+    {
+        qDebug()<<"read error"<<endl;
+    }
 }
