@@ -20,7 +20,7 @@ extern "C"
 
 //在k-d树上进行BBF搜索的最大次数
 /* the maximum number of keypoint NN candidates to check during BBF search */
-#define KDTREE_BBF_MAX_NN_CHKS 500
+#define KDTREE_BBF_MAX_NN_CHKS 1000
 
 //目标点与最近邻和次近邻的距离的比值的阈值，若大于此阈值，则剔除此匹配点对
 //通常此值取0.6，值越小找到的匹配点对越精确，但匹配数目越少
@@ -126,15 +126,15 @@ void SiftMatch::on_openButton_clicked()
     name[2]="pic3.bmp";
     name[3]="pic4.bmp";
     write_file();
-//    img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308_ShiftN.jpg");
-//    img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313_ShiftN.jpg");
-//    img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316_ShiftN.jpg");
-//    img[3]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155318_ShiftN.jpg");
+    img[0]=cvLoadImage("/home/zhou/pic/21:55:47.bmp");
+    img[1]=cvLoadImage("/home/zhou/pic/22:01:58.bmp");
+    img[2]=cvLoadImage("/home/zhou/pic/22:02:55.bmp");
+    img[3]=cvLoadImage("/home/zhou/pic/22:03:40.bmp");
 
-    img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308.bmp");
-    img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313.bmp");
-    img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316.bmp");
-    img[3]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155318.bmp");
+//    img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308.bmp");
+//    img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313.bmp");
+//    img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316.bmp");
+//    img[3]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155318.bmp");
 //    Mat srcc(img[0]),dstt=srcc.clone();
 //    undistort(srcc, dstt, cameraMatrix, distCoeffs,cameraMatrix);
     ui->openButton->setText("stop");//改变按钮文本
@@ -341,7 +341,7 @@ void SiftMatch::on_matchButton_clicked()
             //img2RightBound = img2LeftBound;//图2中匹配点外接矩形的右边界
 
             int invertNum = 0;//统计pt2.x > pt1.x的匹配点对的个数，来判断img[0]中是否右图
-
+            float xsum=0,ysum=0;
             //遍历经RANSAC算法筛选后的特征点集合inliers，找到每个特征点的匹配点，画出连线
             for(int i=0; i<n_inliers; i++)
             {
@@ -350,6 +350,8 @@ void SiftMatch::on_matchButton_clicked()
                 pt1 = Point(cvRound(feats->fwd_match->x), cvRound(feats->fwd_match->y));//图1中点的坐标(feat的匹配点)
                 //qDebug()<<"pt2:("<<pt2.x<<","<<pt2.y<<")--->pt1:("<<pt1.x<<","<<pt1.y<<")";//输出对应点对
 
+                xsum=xsum+pt2.x-pt1.x;
+                ysum=ysum+pt2.y-pt1.y;
                 /*找匹配点区域的边界
                 if(pt1.x < img[0]LeftBound) img[0]LeftBound = pt1.x;
                 if(pt1.x > img[0]RightBound) img[0]RightBound = pt1.x;
@@ -366,6 +368,10 @@ void SiftMatch::on_matchButton_clicked()
                     pt2.x += img[j]->width;//由于两幅图是左右排列的，pt2的横坐标加上图1的宽度，作为连线的终点
                 cvLine(stacked_ransac[j],pt1,pt2,CV_RGB(255,0,255),1,8,0);//在匹配图上画出连线
             }
+
+            qDebug()<<xsum/n_inliers<<endl<<ysum/n_inliers<<endl;
+            cvmSet(H[j],0,2,0-xsum/n_inliers);
+            cvmSet(H[j],1,2,0-ysum/n_inliers);
 
             //绘制图1中包围匹配点的矩形
             //cvRectangle(stacked_ransac,cvPoint(img[0]LeftBound,0),cvPoint(img[0]RightBound,img[0]->height),CV_RGB(0,255,0),2);
@@ -539,12 +545,12 @@ void SiftMatch::on_mosaicButton_clicked()
         cvWarpPerspective(img[2],xformed1,T1,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
         cvWarpPerspective(img[3],xformed2,T2,CV_INTER_LINEAR + CV_WARP_FILL_OUTLIERS,cvScalarAll(0));
 
-        cvNamedWindow("IMG_MOSAIC_SIMPLE1");//创建窗口
-        cvShowImage("IMG_MOSAIC_SIMPLE1",xformed);//显示简易拼接图
-        cvNamedWindow("IMG_MOSAIC_SIMPLE2");//创建窗口
-        cvShowImage("IMG_MOSAIC_SIMPLE2",xformed1);//显示简易拼接图
-        cvNamedWindow("IMG_MOSAIC_SIMPLE3");//创建窗口
-        cvShowImage("IMG_MOSAIC_SIMPLE3",xformed2);//显示简易拼接图
+//        cvNamedWindow("IMG_MOSAIC_SIMPLE1");//创建窗口
+//        cvShowImage("IMG_MOSAIC_SIMPLE1",xformed);//显示简易拼接图
+//        cvNamedWindow("IMG_MOSAIC_SIMPLE2");//创建窗口
+//        cvShowImage("IMG_MOSAIC_SIMPLE2",xformed1);//显示简易拼接图
+//        cvNamedWindow("IMG_MOSAIC_SIMPLE3");//创建窗口
+//        cvShowImage("IMG_MOSAIC_SIMPLE3",xformed2);//显示简易拼接图
 
 //        cvSaveImage("c1.bmp",xformed);
 //        cvSaveImage("c2.bmp",xformed1);
@@ -562,8 +568,9 @@ void SiftMatch::on_mosaicButton_clicked()
         cvResetImageROI(xformed);
         cvResetImageROI(xformed2);
 
-        cvSetImageROI(xformed,cvRect(0,0,img[0]->width,xformed->height));
-        cvSetImageROI(img[0],cvRect(0,0,img[0]->width,xformed->height));
+
+        cvSetImageROI(xformed,cvRect(0,0,MIN(leftTop[0].x,leftBottom[0].x),xformed->height));
+        cvSetImageROI(img[0],cvRect(0,0,MIN(leftTop[0].x,leftBottom[0].x),xformed->height));
         cvAddWeighted(img[0],1,xformed,0,0,xformed);
         cvResetImageROI(xformed);
 
@@ -952,7 +959,7 @@ void SiftMatch::distort_process()
 //        cvResetImageROI(&img1);
 
         cvNamedWindow("IMG_MOSAIC_SIMPLE");//创建窗口
-        //cvMoveWindow("IMG_MOSAIC_SIMPLE",0,0);
+        cvMoveWindow("IMG_MOSAIC_SIMPLE",0,0);
         cvShowImage("IMG_MOSAIC_SIMPLE",xformed);//显示简易拼接图
     }
 
