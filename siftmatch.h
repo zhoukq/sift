@@ -53,6 +53,8 @@ private slots:
 
     void write_file();
 
+    void on_pushButton_clicked();
+
 private:
     Ui::SiftMatch *ui;
 

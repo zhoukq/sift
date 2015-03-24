@@ -25,7 +25,7 @@ extern "C"
 //目标点与最近邻和次近邻的距离的比值的阈值，若大于此阈值，则剔除此匹配点对
 //通常此值取0.6，值越小找到的匹配点对越精确，但匹配数目越少
 /* threshold on squared ratio of distances between NN and 2nd NN */
-#define NN_SQ_DIST_RATIO_THR 0.6
+#define NN_SQ_DIST_RATIO_THR 0.45
 
 //窗口名字符串
 #define IMG0 "pic0"
@@ -125,11 +125,16 @@ void SiftMatch::on_openButton_clicked()
     name[1]="pic2.bmp";
     name[2]="pic3.bmp";
     name[3]="pic4.bmp";
-    write_file();
-    img[0]=cvLoadImage("/home/zhou/pic/21:55:47.bmp");
-    img[1]=cvLoadImage("/home/zhou/pic/22:01:58.bmp");
-    img[2]=cvLoadImage("/home/zhou/pic/22:02:55.bmp");
-    img[3]=cvLoadImage("/home/zhou/pic/22:03:40.bmp");
+
+    img[0]=cvLoadImage("/home/zhou/pic/12:09:56.bmp");
+    img[1]=cvLoadImage("/home/zhou/pic/12:10:35.bmp");
+    img[2]=cvLoadImage("/home/zhou/pic/12:11:17.bmp");
+    img[3]=cvLoadImage("/home/zhou/pic/12:11:43.bmp");
+
+//    img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155321.bmp");
+//    img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155324.bmp");
+//    img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155326.bmp");
+//    img[3]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155329.bmp");
 
 //    img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308.bmp");
 //    img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313.bmp");
@@ -578,7 +583,7 @@ void SiftMatch::on_mosaicButton_clicked()
         cvShowImage(IMG_MOSAIC_SIMPLE,xformed);//显示简易拼接图
 
 
-//        cvSaveImage("call.bmp",xformed);
+        //cvSaveImage("bef_distort.bmp",xformed);
 
         /*
         //简易拼接法：直接将将左图img[0]叠加到xformed的左边
@@ -984,5 +989,126 @@ void SiftMatch::write_file()
     else
     {
         qDebug()<<"read error"<<endl;
+    }
+}
+
+void SiftMatch::on_pushButton_clicked()
+{
+    IplImage *stitch_img[8];
+
+    IplImage *stitch_ransac[8];//显示匹配结果的合成图像，显示经RANSAC算法筛选后的匹配结果
+
+    struct feature *stitch_feat[8];//feat[i]：图i的特征点数组
+    int stitch_n[8];//ni:图i中的特征点个数
+    struct feature *stitch_feats;//每个特征点
+    struct kd_node *stitch_kd_root;//k-d树的树根
+    struct feature **stitch_nbrs;//当前特征点的最近邻点数组
+
+    CvMat * stitch_H[7];//RANSAC算法求出的变换矩阵
+    struct feature **stitch_inliers;//精RANSAC筛选后的内点数组
+    int stitch_n_inliers;//经RANSAC算法筛选后的内点个数
+
+
+    stitch_img[0]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155308.bmp");
+    stitch_img[1]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155313.bmp");
+    stitch_img[2]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155316.bmp");
+    stitch_img[3]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155318.bmp");
+
+    stitch_img[4]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155321.bmp");
+    stitch_img[5]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155324.bmp");
+    stitch_img[6]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155326.bmp");
+    stitch_img[7]=cvLoadImage("/home/zhou/cv/jpg/bmp/20141025155329.bmp");
+
+    //add undistort function here
+    //
+
+    for(int i=0;i<8;i++)
+    {
+        //默认提取的是LOWE格式的SIFT特征点
+        //提取并显示第i幅图片上的特征点
+        stitch_n[i] = sift_features( stitch_img[i], &stitch_feat[i] );//检测图1中的SIFT特征点,n1是图1的特征点个数
+        //export_features("feature1.txt",feat1,n1);//将特征向量数据写入到文件
+    }
+
+    Point pt1,pt2;//连线的两个端点
+    double d0,d1;//feat2中每个特征点到最近邻和次近邻的距离
+    int matchNum = 0;//经距离比值法筛选后的匹配点对的个数
+
+    for(int ii=1;ii<8;ii++)
+    {
+        matchNum = 0;
+
+        //根据图1的特征点集feat1建立k-d树，返回k-d树根给kd_root
+        stitch_kd_root = kdtree_build( stitch_feat[ii-1], stitch_n[ii-1] );
+
+        //遍历特征点集feat2，针对feat2中每个特征点feat，选取符合距离比值条件的匹配点，放到feat的fwd_match域中
+        for(int i = 0; i < stitch_n[ii]; i++ )
+        {
+            stitch_feats = stitch_feat[ii]+i;//第i个特征点的指针
+            //在kd_root中搜索目标点feat的2个最近邻点，存放在nbrs中，返回实际找到的近邻点个数
+            int k = kdtree_bbf_knn( stitch_kd_root, stitch_feats, 2, &stitch_nbrs, KDTREE_BBF_MAX_NN_CHKS );
+            if( k == 2 )
+            {
+                d0 = descr_dist_sq( stitch_feats, stitch_nbrs[0] );//feat与最近邻点的距离的平方
+                d1 = descr_dist_sq( stitch_feats, stitch_nbrs[1] );//feat与次近邻点的距离的平方
+                //若d0和d1的比值小于阈值NN_SQ_DIST_RATIO_THR，则接受此匹配，否则剔除
+                if( d0 < d1 * NN_SQ_DIST_RATIO_THR )
+                {   //将目标点feat和最近邻点作为匹配点对
+                    pt2 = Point( cvRound( stitch_feats->x ), cvRound( stitch_feats->y ) );//图2中点的坐标
+                    pt1 = Point( cvRound( stitch_nbrs[0]->x ), cvRound( stitch_nbrs[0]->y ) );//图1中点的坐标(feat的最近邻点)
+                    matchNum++;//统计匹配点对的个数
+                    stitch_feat[ii][i].fwd_match = stitch_nbrs[0];//使点feat的fwd_match域指向其对应的匹配点
+                }
+            }
+            free( stitch_nbrs );//释放近邻数组
+        }
+        qDebug()<<"distance num"<<matchNum<<endl;
+    }
+
+    for(int j=0;j<7;j++)
+    {
+        //利用RANSAC算法筛选匹配点,计算变换矩阵H，
+        //无论img[0]和img2的左右顺序，H永远是将feat2中的特征点变换为其匹配点，即将img2中的点变换为img[0]中的对应点
+        stitch_H[j] = ransac_xform(stitch_feat[j+1],stitch_n[j+1],FEATURE_FWD_MATCH,lsq_homog,4,0.01,homog_xfer_err,3.0,&stitch_inliers,&stitch_n_inliers);
+        //若能成功计算出变换矩阵，即两幅图中有共同区域
+        if( stitch_H[j] )
+        {
+            qDebug()<<"RANSAC num :"<<stitch_n_inliers<<endl;
+
+           //输出H矩阵
+           for(int i=0;i<3;i++)
+                qDebug()<<cvmGet(stitch_H[j],i,0)<<cvmGet(stitch_H[j],i,1)<<cvmGet(stitch_H[j],i,2);
+
+            stitch_ransac[j] = stack_imgs_horizontal(stitch_img[j], stitch_img[j+1] );//合成图像，显示经RANSAC算法筛选后的匹配结果
+
+            float xsum=0,ysum=0;
+            //遍历经RANSAC算法筛选后的特征点集合inliers，找到每个特征点的匹配点，画出连线
+            for(int i=0; i<stitch_n_inliers; i++)
+            {
+                stitch_feats = stitch_inliers[i];//第i个特征点
+                pt2 = Point(cvRound(stitch_feats->x), cvRound(stitch_feats->y));//图2中点的坐标
+                pt1 = Point(cvRound(stitch_feats->fwd_match->x), cvRound(stitch_feats->fwd_match->y));//图1中点的坐标(feat的匹配点)
+                //qDebug()<<"pt2:("<<pt2.x<<","<<pt2.y<<")--->pt1:("<<pt1.x<<","<<pt1.y<<")";//输出对应点对
+
+                xsum=xsum+pt2.x-pt1.x;
+                ysum=ysum+pt2.y-pt1.y;
+
+                pt2.x += stitch_img[j]->width;//由于两幅图是左右排列的，pt2的横坐标加上图1的宽度，作为连线的终点
+
+                cvLine(stitch_ransac[j],pt1,pt2,CV_RGB(255,0,255),1,8,0);//在匹配图上画出连线
+            }
+
+            qDebug()<<xsum/stitch_n_inliers<<endl<<ysum/stitch_n_inliers<<endl;
+
+            cvmSet(stitch_H[j],0,2,0-xsum/stitch_n_inliers);
+            cvmSet(stitch_H[j],1,2,0-ysum/stitch_n_inliers);
+
+            cvNamedWindow(QString::number(j*10,10).toLatin1().data());//创建窗口
+            cvShowImage(QString::number(j*10,10).toLatin1().data(),stitch_ransac[j]);//显示经RANSAC算法筛选后的匹配图
+        }
+        else //无法计算出变换矩阵，即两幅图中没有重合区域
+        {
+            QMessageBox::warning(this,"warning","no common area");
+        }
     }
 }
